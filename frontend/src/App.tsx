@@ -4,6 +4,7 @@ import { HeroContent } from './components/HeroContent';
 import { ProblemsSection } from './components/sections/ProblemsSection';
 import { HowItWorksSection } from './components/sections/HowItWorksSection';
 import { CapabilitiesSection } from './components/sections/CapabilitiesSection';
+import { InteractiveDemoSection } from './components/sections/InteractiveDemoSection';
 
 export default function App() {
   const scrollToDemo = () => {
@@ -37,6 +38,10 @@ export default function App() {
       {/* ── SECTION 4: CAPABILITIES (NEW STANDALONE SIBLING SECTION BELOW HOW IT WORKS) ── */}
       <CapabilitiesSection />
 
+      {/* ── SECTION 6: INTERACTIVE INTENTLOCK DEMO (NEW STANDALONE SIBLING SECTION BELOW CAPABILITIES) ── */}
+      <InteractiveDemoSection />
+
     </div>
   );
 }
+
