@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ─── FONTS ─── */
+  --font-display: 'Instrument Serif', serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* ─── COLOR DIRECTION ─── */
+  --color-bg-dark: #07090e;           /* Deep cinematic dark background */
+  --color-foreground: #f8fafc;        /* Warm white / soft white */
+  --color-muted: #94a3b8;             /* Soft desaturated gray */
+  --color-accent: #dc5000;            /* Restrained IntentLock amber/orange */
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+
+  /* ─── LIQUID GLASS TOKENS ─── */
+  --liquid-glass-bg: rgba(255, 255, 255, 0.02);
+  --liquid-glass-blur: 8px;
+}
