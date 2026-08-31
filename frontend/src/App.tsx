@@ -1,47 +1,61 @@
-import { Nav } from './components/Nav';
 import { BackgroundVideo } from './components/BackgroundVideo';
 import { HeroContent } from './components/HeroContent';
 import { ProblemsSection } from './components/sections/ProblemsSection';
 import { HowItWorksSection } from './components/sections/HowItWorksSection';
 import { CapabilitiesSection } from './components/sections/CapabilitiesSection';
+import { ProductWorkflowSection } from './components/sections/ProductWorkflowSection';
 import { InteractiveDemoSection } from './components/sections/InteractiveDemoSection';
+import { CtaSection } from './components/sections/CtaSection';
+import { SiteReadinessGate } from './components/SiteReadinessGate';
 
 export default function App() {
-  const scrollToDemo = () => {
-    const el = document.getElementById('demo');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  const scrollToLiveDemo = () => {
+    const el = document.getElementById('live-demo') || document.getElementById('workflow');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
-  const scrollToLearn = () => {
-    const el = document.getElementById('problems');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  const scrollToHowItWorks = () => {
+    const el = document.getElementById('how-it-works');
+    if (el) {
+      const topPos = el.getBoundingClientRect().top + window.pageYOffset;
+      window.scrollTo({
+        top: topPos,
+        behavior: 'smooth',
+      });
+    }
   };
 
   return (
-    <div className="relative bg-[#000000] text-white font-sans selection:bg-neutral-800 selection:text-white antialiased overflow-x-hidden">
-      
-      {/* ── PERSISTENT LIQUID-GLASS NAVBAR ── */}
-      <Nav onDemoClick={scrollToDemo} />
+    <SiteReadinessGate>
+      <div className="relative bg-[#000000] text-white font-sans selection:bg-neutral-800 selection:text-white antialiased overflow-x-hidden">
+        
+        {/* ── SECTION 1: HERO (SHIFTED SLIGHTLY FURTHER DOWN BY ADDITIONAL 2-3% VIEWPORT HEIGHT FOR COMFORTABLE HEAD ROOM) ── */}
+        <section id="hero" className="relative flex flex-col lg:block lg:min-h-screen pt-10 sm:pt-14 lg:pt-16">
+          <BackgroundVideo />
+          <HeroContent onLearnClick={scrollToHowItWorks} />
+        </section>
 
-      {/* ── SECTION 1: HERO (UNTOUCHED / READ-ONLY) ── */}
-      <section id="hero" className="relative flex flex-col lg:block lg:min-h-screen">
-        <BackgroundVideo />
-        <HeroContent onDemoClick={scrollToDemo} onLearnClick={scrollToLearn} />
-      </section>
+        {/* ── SECTION 2: PROBLEMS ── */}
+        <ProblemsSection />
 
-      {/* ── SECTION 2: PROBLEMS (SEPARATE SIBLING SECTION BELOW HERO) ── */}
-      <ProblemsSection />
+        {/* ── SECTION 3: HOW IT WORKS ── */}
+        <HowItWorksSection />
 
-      {/* ── SECTION 3: HOW IT WORKS (SEPARATE SIBLING SECTION BELOW PROBLEMS) ── */}
-      <HowItWorksSection />
+        {/* ── SECTION 4: CAPABILITIES ── */}
+        <CapabilitiesSection />
 
-      {/* ── SECTION 4: CAPABILITIES (NEW STANDALONE SIBLING SECTION BELOW HOW IT WORKS) ── */}
-      <CapabilitiesSection />
+        {/* ── SECTION 6: SECURITY ENFORCEMENT SHOWCASE (3D Circular Ring) ── */}
+        <InteractiveDemoSection />
 
-      {/* ── SECTION 6: INTERACTIVE INTENTLOCK DEMO (NEW STANDALONE SIBLING SECTION BELOW CAPABILITIES) ── */}
-      <InteractiveDemoSection />
+        {/* ── FINAL HYPERDRIVE CTA ("You've seen IntentLock enforce boundary. Now test it yourself.") ── */}
+        <CtaSection onDemoClick={scrollToLiveDemo} />
 
-    </div>
+        {/* ── LIVE DEMO / REAL APPLICATION WORKFLOW (DIRECTLY BELOW CTA ON LANDING PAGE) ── */}
+        <ProductWorkflowSection />
+
+      </div>
+    </SiteReadinessGate>
   );
 }
-

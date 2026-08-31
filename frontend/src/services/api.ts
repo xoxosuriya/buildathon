@@ -4,7 +4,8 @@ import {
   AuthorizationContract,
   VerificationResult,
   PaymentOrder,
-  AuditEvent
+  AuditEvent,
+  DemoScenarioResponse
 } from '../types/api';
 
 const API_BASE = '/api';
@@ -59,6 +60,30 @@ export const apiService = {
     }
   },
 
+  // Create Intent
+  async createIntent(payload: {
+    user_id?: string;
+    agent_id?: string;
+    raw_prompt: string;
+    action: string;
+    max_amount: string;
+    quantity?: number;
+    category?: string;
+  }): Promise<{ id: string; user_id: string; agent_id: string; max_amount: string; status: string }> {
+    return fetchJSON<{ id: string; user_id: string; agent_id: string; max_amount: string; status: string }>('/intent', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: payload.user_id || 'USER-DEFAULT',
+        agent_id: payload.agent_id || 'AGENT-DEFAULT',
+        raw_prompt: payload.raw_prompt,
+        action: payload.action,
+        max_amount: payload.max_amount,
+        quantity: payload.quantity || 1,
+        category: payload.category || 'ELECTRONICS'
+      })
+    });
+  },
+
   // Create Intent & Proposal
   async createProposal(intentId: string, productId: string, quantity: number = 1): Promise<ProposalSnapshot> {
     return fetchJSON<ProposalSnapshot>('/intent/workflow/proposal', {
@@ -98,6 +123,14 @@ export const apiService = {
     });
   },
 
+  // Evaluate Demo Scenario (Section 6 Real Backend Gateway)
+  async evaluateDemoScenario(intentType: string = 'buy', scenario: string = 'normal'): Promise<DemoScenarioResponse> {
+    return fetchJSON<DemoScenarioResponse>('/verify/demo-scenario/evaluate', {
+      method: 'POST',
+      body: JSON.stringify({ intent_type: intentType, scenario })
+    });
+  },
+
   // Resolve Review
   async resolveReview(transactionId: string, acceptedPrice: string): Promise<VerificationResult> {
     return fetchJSON<VerificationResult>(`/verify/${transactionId}/resolve`, {
@@ -127,3 +160,4 @@ export const apiService = {
     }
   }
 };
+

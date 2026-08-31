@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background: #0f172a; margin: 0; padding: 0; min-height: 100vh; overflow: hidden;">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -9,9 +9,79 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <style>
+      html, body {
+        background-color: #0f172a;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      /* 100% GPU Compositor Thread Only Animation (Zero CPU Repaint / 60 FPS Guaranteed) */
+      @keyframes loaderCircle {
+        0% {
+          transform: rotate(0deg) translateZ(0);
+        }
+        100% {
+          transform: rotate(360deg) translateZ(0);
+        }
+      }
+
+      @keyframes loaderLetter {
+        0%, 100% {
+          opacity: 0.4;
+          transform: translateY(0) translateZ(0);
+        }
+        20% {
+          opacity: 1;
+          transform: scale(1.15) translateZ(0);
+        }
+        40% {
+          opacity: 0.7;
+          transform: translateY(0) translateZ(0);
+        }
+      }
+
+      .static-loader-circle {
+        animation: loaderCircle 5s linear infinite;
+        will-change: transform;
+        backface-visibility: hidden;
+        box-shadow:
+          0 6px 12px 0 #38bdf8 inset,
+          0 12px 18px 0 #005dff inset,
+          0 36px 36px 0 #1e40af inset,
+          0 0 3px 1.2px rgba(56, 189, 248, 0.3),
+          0 0 6px 1.8px rgba(0, 93, 255, 0.2);
+      }
+
+      .static-loader-letter {
+        animation: loaderLetter 3s infinite;
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+      }
+    </style>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="background: linear-gradient(to bottom, #1a3379, #0f172a, #000000); margin: 0; min-height: 100vh;">
+    <div id="root">
+      <!-- ── STATIC HTML FIRST-PAINT 21ST.DEV LOADER SHELL (0ms BLANK SCREEN & 60 FPS GPU ANIMATION) ── -->
+      <div id="initial-static-loader" style="position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: linear-gradient(to bottom, #1a3379, #0f172a, #000000); font-family: system-ui, -apple-system, sans-serif; color: white; user-select: none;">
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 180px; height: 180px; letter-spacing: 0.15em; font-size: 14px; font-weight: 600;">
+          <span class="static-loader-letter" style="animation-delay: 0.0s; display: inline-block; opacity: 0.4;">I</span>
+          <span class="static-loader-letter" style="animation-delay: 0.1s; display: inline-block; opacity: 0.4;">N</span>
+          <span class="static-loader-letter" style="animation-delay: 0.2s; display: inline-block; opacity: 0.4;">T</span>
+          <span class="static-loader-letter" style="animation-delay: 0.3s; display: inline-block; opacity: 0.4;">E</span>
+          <span class="static-loader-letter" style="animation-delay: 0.4s; display: inline-block; opacity: 0.4;">N</span>
+          <span class="static-loader-letter" style="animation-delay: 0.5s; display: inline-block; opacity: 0.4;">T</span>
+          <span class="static-loader-letter" style="animation-delay: 0.6s; display: inline-block; opacity: 0.4;">L</span>
+          <span class="static-loader-letter" style="animation-delay: 0.7s; display: inline-block; opacity: 0.4;">O</span>
+          <span class="static-loader-letter" style="animation-delay: 0.8s; display: inline-block; opacity: 0.4;">C</span>
+          <span class="static-loader-letter" style="animation-delay: 0.9s; display: inline-block; opacity: 0.4;">K</span>
+          <div class="static-loader-circle" style="position: absolute; inset: 0; border-radius: 9999px; pointer-events: none;"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

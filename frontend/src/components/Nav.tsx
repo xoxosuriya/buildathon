@@ -5,10 +5,10 @@ interface NavProps {
 }
 
 const NAV_LINKS = [
-  { label: 'Product', href: '#product' },
-  { label: 'Security', href: '#problems' },
+  { label: 'Product', href: '#how-it-works' },
+  { label: 'Security', href: '#demo' },
   { label: 'Capabilities', href: '#capabilities' },
-  { label: 'Demo', href: '#demo' },
+  { label: 'Demo', href: '#live-demo' },
 ];
 
 export function Nav({ onDemoClick }: NavProps) {
@@ -17,12 +17,12 @@ export function Nav({ onDemoClick }: NavProps) {
   return (
     <>
       {/* Persistent Liquid-Glass Navbar */}
-      <header className="fixed top-0 inset-x-0 z-50 px-5 sm:px-8 py-3.5 sm:py-4 flex flex-row justify-between items-center liquid-glass text-white">
+      <header className="fixed top-0 inset-x-0 z-50 px-5 sm:px-8 py-3.5 sm:py-4 flex flex-row justify-between items-center liquid-glass text-white font-sans">
         {/* Logo (Left Side) */}
         <div className="flex flex-row items-center gap-3">
           <a
             href="/"
-            className="text-[21px] sm:text-[26px] tracking-tight font-medium select-none no-underline flex items-baseline gap-0.5 text-white"
+            className="text-[21px] sm:text-[26px] tracking-tight font-medium select-none no-underline flex items-baseline gap-0.5 text-white font-sans"
           >
             IntentLock®
           </a>
@@ -32,12 +32,12 @@ export function Nav({ onDemoClick }: NavProps) {
         </div>
 
         {/* Desktop Nav Links (Center) */}
-        <nav className="hidden md:flex flex-row items-center text-[23px] font-normal text-white">
+        <nav className="hidden md:flex flex-row items-center text-[23px] font-normal text-white font-sans">
           {NAV_LINKS.map((link, index) => (
             <span key={link.label} className="flex items-center">
               <a
                 href={link.href}
-                className="hover:opacity-60 transition-opacity no-underline text-white"
+                className="hover:opacity-60 transition-opacity no-underline text-white font-sans"
               >
                 {link.label}
               </a>
@@ -52,7 +52,7 @@ export function Nav({ onDemoClick }: NavProps) {
         <div className="hidden md:block">
           <button
             onClick={onDemoClick}
-            className="text-[23px] text-white underline underline-offset-2 hover:opacity-60 transition-opacity bg-transparent border-none cursor-pointer p-0 font-normal"
+            className="text-[23px] text-white underline underline-offset-2 hover:opacity-60 transition-opacity bg-transparent border-none cursor-pointer p-0 font-normal font-sans"
           >
             Try Live Demo
           </button>
@@ -90,13 +90,13 @@ export function Nav({ onDemoClick }: NavProps) {
             : 'opacity-0 pointer-events-none'
         }`}
       >
-        <nav className="flex flex-col items-center gap-6 text-2xl text-white">
+        <nav className="flex flex-col items-center gap-6 text-2xl text-white font-sans">
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
               href={link.href}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="hover:opacity-60 transition-opacity no-underline text-white"
+              className="hover:opacity-60 transition-opacity no-underline text-white font-sans"
             >
               {link.label}
             </a>
@@ -106,7 +106,7 @@ export function Nav({ onDemoClick }: NavProps) {
               setIsMobileMenuOpen(false);
               onDemoClick?.();
             }}
-            className="text-white underline underline-offset-2 hover:opacity-60 transition-opacity text-2xl bg-transparent border-none cursor-pointer mt-4"
+            className="text-white underline underline-offset-2 hover:opacity-60 transition-opacity text-2xl bg-transparent border-none cursor-pointer mt-4 font-sans"
           >
             Try Live Demo
           </button>

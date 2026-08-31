@@ -28,6 +28,8 @@ export interface AuthorizationContract {
   intent_id: string;
   user_id: string;
   agent_id: string;
+  merchant_id?: string;
+  product_id?: string;
   max_amount: string;
   status: 'ACTIVE' | 'USED' | 'SUPERSEDED' | 'REJECTED' | 'EXPIRED';
   created_at: string;
@@ -75,3 +77,43 @@ export interface AuditEvent {
   hash: string;
   timestamp: string;
 }
+
+export interface DemoScenarioRequest {
+  scenario: string;
+  intent_type?: string;
+}
+
+export interface DemoScenarioResponse {
+  scenario: string;
+  scenarioLabel: string;
+  intent_type?: string;
+  decision: 'ALLOW' | 'BLOCK' | 'REVIEW';
+  status: 'AUTHORIZED' | 'BLOCKED';
+  reason: string;
+  explanation?: string;
+  backend_detail?: string;
+  comparison?: {
+    authorized?: string;
+    requested?: string;
+    authorizedTarget?: string;
+    requestedTarget?: string;
+  };
+  user_authorization: {
+    action: string;
+    product: string;
+    formattedMaxAmount: string;
+    target: string;
+    frequency: string;
+  };
+  proposed_action: {
+    item: string;
+    amount: string;
+    target: string;
+    attempt: string;
+  };
+  checks: Array<{
+    label: string;
+    passed: boolean;
+  }>;
+}
+

@@ -15,6 +15,8 @@ out/
 .pytest_cache/
 __pycache__/
 *.pyc
+*.db-shm
+*.db-wal
 
 # Environment & Credentials
 .env
@@ -26,6 +28,8 @@ __pycache__/
 *.key
 credentials.json
 service-account*.json
+mcp.json
+.cursor/
 
 # Logs & System Files
 *.log
