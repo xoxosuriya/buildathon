@@ -5,6 +5,16 @@
 
 ---
 
+## 🚀 Live Production Demo
+
+IntentLock is successfully **deployed and live in production**:
+
+- 🌐 **Production Application**: [https://buildathon-gules.vercel.app](https://buildathon-gules.vercel.app)
+- 🐙 **GitHub Repository**: [https://github.com/xoxosuriya/buildathon](https://github.com/xoxosuriya/buildathon) (connected to automatic Vercel production deployment)
+- 🔌 **API Integration**: Frontend uses environment-configured `VITE_API_BASE_URL` communicating with the deployed FastAPI backend web service exposing `/docs` (Swagger UI), `/health`, and verification endpoints.
+
+---
+
 ## 1. What is IntentLock?
 
 **IntentLock** is an enterprise-grade transaction safety gateway for autonomous AI-driven commerce. As AI shopping agents gain autonomy to interact with e-commerce platforms, IntentLock ensures AI output **never** becomes direct payment authority.
@@ -30,26 +40,29 @@ Traditional AI commerce risks prompt injection, price drift between proposal and
 | **Phase 5** | LLM Semantic Layer | **COMPLETE** |
 | **Phase 6** | React Frontend | **COMPLETE / FROZEN** |
 | **Phase 7** | Razorpay Test Mode Integration | **COMPLETE** |
-| **Phase 8** | Evaluation Suite & Final Documentation | **IN PROGRESS** |
+| **Phase 8** | Evaluation Suite & Final Documentation | **COMPLETE** |
+| **Phase 9** | Production Deployment (Vercel & Cloud Hosting) | **COMPLETE** |
 
 ---
 
-## 4. Complete System Architecture
+## 4. Production Deployment & Architecture
+
+IntentLock is deployed with a decoupled, high-performance web architecture:
 
 ```
+GitHub main branch
+        ↓
+Vercel Static Frontend (https://buildathon-gules.vercel.app)
+        ↓ (VITE_API_BASE_URL)
+Deployed FastAPI Backend Web Service
+        ↓
 USER NATURAL LANGUAGE
         ↓
 LLM SEMANTIC LAYER
         ↓
-STRICT STRUCTURED OUTPUT
+STRICT STRUCTURED OUTPUT (Pydantic)
         ↓
-DOMAIN/CATALOG VALIDATION
-        ↓
-INTENT
-        ↓
-AUTHORIZATION
-        ↓
-AI AGENT PROPOSAL
+DOMAIN / CATALOG VALIDATION
         ↓
 21-CHECK DETERMINISTIC VERIFICATION ENGINE
         ↓
@@ -68,6 +81,11 @@ RAZORPAY TEST MODE (`rzp_test_` Key Enforcement)
 PAYMENT ORDER
 ```
 
+### Deployment Security & Configuration
+- **Frontend Hosting**: Deployed on Vercel connected to the GitHub `main` branch with continuous integration.
+- **Dynamic API Binding**: Uses `VITE_API_BASE_URL` to route requests dynamically between local development and production backend environments.
+- **Environment Secret Isolation**: API keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `OPENAI_API_KEY`) are managed strictly through deployment environment variables. Zero credentials, `.env` files, or secrets are committed to git.
+
 > [!IMPORTANT]
 > **CRITICAL ARCHITECTURAL PRINCIPLE:**
 > - The **LLM interprets intent**.
@@ -76,7 +94,17 @@ PAYMENT ORDER
 
 ---
 
-## 5. Phase 5 — LLM Semantic Layer
+## 5. Production Verification
+
+The deployed application has been verified across all core user flows and security scenarios:
+
+- **End-to-End Flow**: Natural language intent parsing, proposal creation, user authorization contract generation, transaction submission, 21-check verification, and Razorpay Test Mode payment order creation.
+- **Adversarial Security Boundary**: Verified that price escalation, unauthorized add-ons, unapproved product SKUs, quantity tampering, and replay attempts are blocked in real-time by the gateway.
+- **Zero Real-Money Risk**: All payment processing operates strictly in Razorpay Test Mode (`rzp_test_...`). No real-money transaction flow is used.
+
+---
+
+## 6. Phase 5 — LLM Semantic Layer
 
 Phase 5 adds natural-language processing capabilities to IntentLock without compromising the deterministic security boundary:
 
@@ -90,7 +118,7 @@ Phase 5 adds natural-language processing capabilities to IntentLock without comp
 
 ---
 
-## 6. Phase 7 — Razorpay Test Mode Integration
+## 7. Phase 7 — Razorpay Test Mode Integration
 
 Phase 7 completes payment order creation behind IntentLock's 21-check verification engine:
 
@@ -104,14 +132,10 @@ Phase 7 completes payment order creation behind IntentLock's 21-check verificati
 - **Fail-Closed Gateway Behavior**: Network or gateway errors return HTTP 502 Bad Gateway and emit a `PAYMENT_FAILED` audit log without creating fake order IDs.
 - **Idempotency**: Repeated payment requests for the same transaction return the existing stored `PaymentOrder`.
 - **Audit Logging**: Emits immutable `PAYMENT_EXECUTED`, `PAYMENT_REJECTED`, `PAYMENT_FAILED`, and `PAYMENT_REPEATED` audit events.
-- **Secret Protection**: `.env.example` contains non-sensitive placeholders only; `.env` is gitignored; zero API credentials exposed in logs or API responses.
-
-> [!CAUTION]
-> **NO REAL-MONEY PAYMENT FLOW IS USED.** IntentLock operates strictly in Razorpay Test Mode (`rzp_test_...`).
 
 ---
 
-## 7. Decision Semantics
+## 8. Decision Semantics
 
 1. **`ALLOW`**: All 21 security and operational checks pass. Atomically updates `Authorization.status` from `"ACTIVE"` to `"USED"` in a single database transaction boundary, authorizing payment gateway execution.
 2. **`REVIEW`**: Operational flags detected (e.g. live merchant price changed within total authorized limit, or stale `MerchantState`). Preserves `Authorization.status = "ACTIVE"` for human review or merchant state refresh.
@@ -119,7 +143,7 @@ Phase 7 completes payment order creation behind IntentLock's 21-check verificati
 
 ---
 
-## 8. Verification & Testing Baseline
+## 9. Verification & Testing Baseline
 
 IntentLock includes an extensive automated security and functional verification suite:
 
@@ -146,7 +170,7 @@ The test suite validates:
 
 ---
 
-## 9. Security Controls
+## 10. Security Controls
 
 - **Deterministic Authority**: The 21-check verification engine evaluates hard constraints independently of LLM reasoning.
 - **Untrusted LLM Output Isolation**: LLM output is parsed as unverified draft proposals and strictly validated against catalog entity schemas.
@@ -158,7 +182,7 @@ The test suite validates:
 
 ---
 
-## 10. Metrics & Evaluation Infrastructure
+## 11. Metrics & Evaluation Infrastructure
 
 IntentLock exposes runtime telemetry and decision counters via `GET /audit/stats`:
 
@@ -170,36 +194,26 @@ IntentLock exposes runtime telemetry and decision counters via `GET /audit/stats
 - `active_agents`: Number of active AI agents interacting with the gateway
 - `GET /audit/events`: Complete append-only SHA-256 hash-chained AuditEvent stream
 
-*Note: Automated latency benchmarks (p50/p95/p99) and ROC confusion-matrix reports are documented evaluation roadmap items for future production releases.*
-
 ---
 
-## 11. Installation & Setup
+## 12. Local Installation & Setup
 
 ### Prerequisites
 - Python 3.10+
-- Windows / Linux / macOS
+- Node.js 18+ (for frontend local development)
 
-### Installation Steps
+### Local Setup
 ```bash
-# Clone/navigate to project root
-cd backend
+# Clone repository
+git clone https://github.com/xoxosuriya/buildathon.git
+cd buildathon
 
-# Activate virtual environment (Windows PowerShell)
+# Backend Setup
+cd backend
 .\venv\Scripts\Activate.ps1
-
-# Install dependencies
 pip install -r requirements.txt
-```
 
----
-
-## 12. Running the Backend Server
-
-To start the FastAPI server with auto-reload:
-
-```powershell
-cd backend
+# Start Backend Server
 $env:PYTHONPATH="."
 .\venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
@@ -221,7 +235,7 @@ $env:PYTHONPATH="."
 
 ---
 
-## 14. Frontend & Prototype Status
+## 14. Frontend & Architecture Status
 
-- **Frontend Status**: The React frontend in `frontend/` is **FROZEN** and remains untouched by backend security enhancements.
-- **Database Architecture**: Uses SQLite with `PRAGMA foreign_keys=ON` for local execution and testing. Ready for PostgreSQL migration using `SELECT ... FOR UPDATE NOWAIT` for high-throughput concurrent transaction locking in production environments.
+- **Frontend Status**: The React frontend in `frontend/` is deployed on Vercel. Codebase remains frozen and untouched by backend security logic.
+- **Database Architecture**: Uses SQLite with `PRAGMA foreign_keys=ON` with automated startup entity seeding. Ready for PostgreSQL migration using `SELECT ... FOR UPDATE NOWAIT` for high-throughput concurrent transaction locking in enterprise production environments.
