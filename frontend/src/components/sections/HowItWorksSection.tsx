@@ -448,22 +448,27 @@ export function HowItWorksSection() {
 
           {/* Active 5-Step Indicator Pills (CLICKABLE TO SWITCH STEPS IMMEDIATELY) */}
           <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 mt-5">
-            {STEP_PILLS.map((label, idx) => (
-              <button
-                key={label}
-                onClick={() => {
-                  stepRef.current = idx;
-                  setActiveStepIndex(idx);
-                }}
-                className={`text-[10px] sm:text-[11px] font-mono tracking-wider px-3 sm:px-3.5 py-1.5 rounded-full border transition-all duration-300 cursor-pointer ${
-                  activeStepIndex === idx
-                    ? 'border-white text-white bg-neutral-900 shadow-md scale-105'
-                    : 'border-neutral-800 text-neutral-500 bg-transparent hover:border-neutral-700 hover:text-neutral-300'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            {STEP_PILLS.map((label, idx) => {
+              const isActive = activeStepIndex === idx;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    stepRef.current = idx;
+                    setActiveStepIndex(idx);
+                  }}
+                  className={`text-xs sm:text-[12px] font-mono tracking-wider px-3.5 sm:px-4 py-2 rounded-full transition-all duration-300 cursor-pointer flex items-center justify-center ${
+                    isActive
+                      ? 'border-2 border-white text-white bg-neutral-900 shadow-[0_0_20px_rgba(255,255,255,0.25)] ring-2 ring-white/30 scale-105 font-bold'
+                      : 'border border-neutral-800 text-neutral-400 bg-black/40 hover:border-neutral-700 hover:text-neutral-200 font-medium'
+                  }`}
+                >
+                  <span>{label}</span>
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -483,6 +488,7 @@ export function HowItWorksSection() {
             >
               {CARD_STACK_ITEMS.map((cardData, i) => {
                 const videoSrc = CARD_VIDEOS[i % CARD_VIDEOS.length];
+                const isStepActive = !cardData.isDecorative && activeStepIndex === i - 1;
 
                 return (
                   <div
@@ -527,13 +533,24 @@ export function HowItWorksSection() {
                         return (
                           <div
                             key={layerIdx}
-                            className="absolute inset-0 rounded-[20px] border border-white/20 overflow-hidden bg-[#0f0f0f] shadow-2xl transition-all duration-300 hover:border-white/40"
+                            className={`absolute inset-0 rounded-[20px] overflow-hidden bg-[#0f0f0f] shadow-2xl transition-all duration-300 hover:border-white/40 ${
+                              isStepActive
+                                ? 'border-2 border-white shadow-[0_0_35px_rgba(255,255,255,0.25)]'
+                                : 'border border-white/20'
+                            }`}
                             style={{
                               transform: `translateZ(${zOffset}px)`,
                               backfaceVisibility: 'hidden',
                               boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.25), 0 20px 40px rgba(0,0,0,0.95)',
                             }}
                           >
+                            {/* Floating Active Stage Badge Indicator */}
+                            {isStepActive && (
+                              <div className="absolute -top-11 left-1/2 -translate-x-1/2 px-3.5 py-1.5 rounded-full bg-white text-black font-mono text-[11px] font-bold shadow-2xl uppercase tracking-wider flex items-center gap-2 z-30 border border-white/50 animate-pulse">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                <span>ACTIVE STAGE: {cardData.step}</span>
+                              </div>
+                            )}
                             {/* Autoplaying animated video background inside card */}
                             <video
                               src={videoSrc}
