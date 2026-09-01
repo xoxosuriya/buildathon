@@ -123,6 +123,28 @@ def execute_payment_service(
     rzp_order_id = None
 
     if rzp_key_id and rzp_key_secret:
+        # STRICT TEST MODE KEY ENFORCEMENT: Key ID MUST start with 'rzp_test_'
+        if not rzp_key_id.startswith("rzp_test_"):
+            db_audit = models.AuditEvent(
+                id=models.generate_uuid(),
+                trace_id=db_verif.authorization_id,
+                event_type="PAYMENT_REJECTED",
+                authorization_id=db_verif.authorization_id,
+                transaction_id=db_txn.id,
+                payload=json.dumps({
+                    "transaction_id": db_txn.id,
+                    "verification_id": db_verif.id,
+                    "error": "NON_TEST_KEY_REJECTED",
+                    "note": "Payment rejected: Razorpay credentials must use Test Mode (key ID starting with 'rzp_test_')",
+                }),
+            )
+            db.add(db_audit)
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment execution rejected: Razorpay credentials must use Test Mode (key ID starting with 'rzp_test_').",
+            )
+
         # CASE 2: Credentials ARE configured -> Must attempt Razorpay Test Mode call and FAIL CLOSED on API error
         try:
             import razorpay

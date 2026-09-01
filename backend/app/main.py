@@ -22,6 +22,7 @@ from app.routers import (
     payment,
     workflow,
     catalog,
+    semantic_intent,
 )
 
 # Auto-create SQLite database tables
@@ -181,4 +182,6 @@ app.include_router(audit.router)
 app.include_router(payment.router)
 app.include_router(workflow.router)
 app.include_router(catalog.router)
+app.include_router(semantic_intent.router)
+
 

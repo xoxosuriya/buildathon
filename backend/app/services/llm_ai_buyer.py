@@ -23,25 +23,18 @@ class LLMAIBuyerAdapter(AIBuyerAdapter):
     def parse_user_prompt(self, prompt: str) -> Dict[str, Any]:
         """
         Extract intent requirements (action, quantity, max_amount, search_query) from prompt text.
-        Falls back to regex heuristics if external LLM API is unconfigured.
+        Delegates to LLMSemanticParser for structured Pydantic schema validation.
         """
-        # Parse currency/amount e.g. "under ₹1500" or "under 1500" or "INR 1500"
-        amount_match = re.search(r'(?:under|below|max|for|limit|budget|₹|INR|\$)\s*(?:₹|INR|\$)?\s*(\d+(?:\.\d{1,2})?)', prompt, re.IGNORECASE)
-        max_amount = Decimal(amount_match.group(1)) if amount_match else Decimal("1000.00")
-        
-        # Parse item quantity e.g. "Buy 2", "2 items"
-        qty_match = re.search(r'\b(?:buy|purchase|quantity|qty)?\s*(\d+)\s*(?:items|units|pcs|gaming|headsets|mice|mouse|products)?\b', prompt, re.IGNORECASE)
-        quantity = int(qty_match.group(1)) if (qty_match and Decimal(qty_match.group(1)) != max_amount) else 1
-        
-        # Parse search query keywords
-        query_words = [w for w in prompt.split() if w.lower() not in ("buy", "one", "a", "an", "under", "for", "please", "purchase", "the")]
-        search_query = " ".join(query_words) if query_words else prompt
+        from app.services.llm_semantic_parser import LLMSemanticParser
+        parser = LLMSemanticParser(api_key=self.api_key, model_name=self.model_name)
+        parsed_bound = parser.parse(prompt)
 
         return {
-            "action": "PURCHASE",
-            "quantity": quantity,
-            "max_amount": max_amount,
-            "search_query": search_query
+            "action": parsed_bound.action,
+            "quantity": parsed_bound.quantity,
+            "max_amount": parsed_bound.max_amount,
+            "search_query": parsed_bound.product_query,
+            "intent_status": parsed_bound.intent_status,
         }
 
     def discover_products(

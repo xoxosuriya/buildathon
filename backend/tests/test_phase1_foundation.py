@@ -31,7 +31,9 @@ def test_payment_stub(client):
     assert data["status"] == "stub"
 
 
-def test_all_10_tables_exist():
+def test_all_10_tables_exist(client):
+    from app.database import Base
+    Base.metadata.create_all(bind=engine)
     inspector = inspect(engine)
     tables = inspector.get_table_names()
     expected_tables = [

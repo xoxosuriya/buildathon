@@ -372,3 +372,172 @@ def test_p4_17_configured_razorpay_failure_fails_closed_http_502(client, monkeyp
     ).first()
     assert fail_audit is not None
     db.close()
+
+
+# =====================================================================
+# PHASE 7: RAZORPAY TEST MODE ENFORCEMENT & SECURITY BOUNDARY TESTS
+# =====================================================================
+
+# TEST 1: Valid Test Key ('rzp_test_...') Allowed
+def test_p7_1_valid_test_key_allowed(client, monkeypatch):
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_valid_key_123")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "valid_secret_456")
+
+    class MockOrder:
+        def create(self, data):
+            return {"id": "order_rzp_test_success_101"}
+
+    class MockRazorpayClient:
+        def __init__(self, auth):
+            assert auth[0].startswith("rzp_test_")
+            self.order = MockOrder()
+
+    import sys
+    import types
+    mock_rzp_module = types.ModuleType("razorpay")
+    mock_rzp_module.Client = MockRazorpayClient
+    monkeypatch.setitem(sys.modules, "razorpay", mock_rzp_module)
+
+    data = helper_setup_allow_transaction(client)
+    res = client.post("/payment/execute", json={"transaction_id": data["transaction_id"]})
+    assert res.status_code == 200
+    assert res.json()["razorpay_order_id"] == "order_rzp_test_success_101"
+
+
+# TEST 2: Production-Style Key ('rzp_live_...') Rejected cleanly with HTTP 400
+def test_p7_2_production_key_rejected(client, monkeypatch):
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_live_production_key_777")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "live_secret_777")
+
+    # If razorpay Client.order.create is invoked, fail test immediately
+    class TrapRazorpayClient:
+        def __init__(self, auth):
+            pytest.fail("Razorpay API client MUST NOT be initialized when production rzp_live_ key is provided!")
+
+    import sys
+    import types
+    mock_rzp_module = types.ModuleType("razorpay")
+    mock_rzp_module.Client = TrapRazorpayClient
+    monkeypatch.setitem(sys.modules, "razorpay", mock_rzp_module)
+
+    data = helper_setup_allow_transaction(client)
+    res = client.post("/payment/execute", json={"transaction_id": data["transaction_id"]})
+    assert res.status_code == 400
+    assert "Test Mode" in res.json()["detail"] or "rzp_test_" in res.json()["detail"]
+
+
+# TEST 3: Malformed/Unknown Key Rejected cleanly with HTTP 400
+def test_p7_3_malformed_key_rejected(client, monkeypatch):
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "invalid_key_format")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "some_secret")
+
+    class TrapRazorpayClient:
+        def __init__(self, auth):
+            pytest.fail("Razorpay API client MUST NOT be initialized for malformed key!")
+
+    import sys
+    import types
+    mock_rzp_module = types.ModuleType("razorpay")
+    mock_rzp_module.Client = TrapRazorpayClient
+    monkeypatch.setitem(sys.modules, "razorpay", mock_rzp_module)
+
+    data = helper_setup_allow_transaction(client)
+    res = client.post("/payment/execute", json={"transaction_id": data["transaction_id"]})
+    assert res.status_code == 400
+
+
+# TEST 4: BLOCK Decision + Test Key -> Rejects BEFORE Razorpay Client
+def test_p7_4_block_prevents_razorpay(client, monkeypatch):
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_valid_key_123")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "valid_secret_456")
+
+    class TrapRazorpayClient:
+        def __init__(self, auth):
+            pytest.fail("Razorpay client MUST NOT be initialized when decision is BLOCK!")
+
+    import sys
+    import types
+    mock_rzp_module = types.ModuleType("razorpay")
+    mock_rzp_module.Client = TrapRazorpayClient
+    monkeypatch.setitem(sys.modules, "razorpay", mock_rzp_module)
+
+    data = helper_setup_allow_transaction(client)
+    # Exceed ceiling -> BLOCK
+    txn = client.post("/transaction", json={
+        "authorization_id": data["authorization_id"],
+        "agent_id": data["agent_id"],
+        "merchant_id": data["merchant_id"],
+        "product_id": data["product_id"],
+        "requested_amount": "9999.00",
+        "quantity": 1
+    }).json()["id"]
+    client.post(f"/verify/{txn}")
+
+    res = client.post("/payment/execute", json={"transaction_id": txn})
+    assert res.status_code == 400
+    assert "BLOCK" in res.json()["detail"]
+
+
+# TEST 5: REVIEW Decision + Test Key -> Rejects BEFORE Razorpay Client
+def test_p7_5_review_prevents_razorpay(client, monkeypatch):
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_valid_key_123")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "valid_secret_456")
+
+    class TrapRazorpayClient:
+        def __init__(self, auth):
+            pytest.fail("Razorpay client MUST NOT be initialized when decision is REVIEW!")
+
+    import sys
+    import types
+    mock_rzp_module = types.ModuleType("razorpay")
+    mock_rzp_module.Client = TrapRazorpayClient
+    monkeypatch.setitem(sys.modules, "razorpay", mock_rzp_module)
+
+    entities = helper_setup_verified_authorization(client, price_a="100.00", max_amount="300.00", quantity=3)
+    db = TestingSessionLocal()
+    ms = db.query(models.MerchantState).filter(models.MerchantState.product_id == entities["product_id"]).first()
+    ms.last_verified_at = datetime.now(timezone.utc) - timedelta(hours=48)
+    db.commit()
+    db.close()
+
+    txn = helper_create_transaction(client, entities, amount="300.00", quantity=3)
+    client.post(f"/verify/{txn}")
+
+    res = client.post("/payment/execute", json={"transaction_id": txn})
+    assert res.status_code == 400
+    assert "REVIEW" in res.json()["detail"]
+
+
+# TEST 6: ALLOW + Test Key + Gateway Failure -> Fails Closed with HTTP 502
+def test_p7_6_gateway_failure_fails_closed(client, monkeypatch):
+    monkeypatch.setenv("RAZORPAY_KEY_ID", "rzp_test_valid_key_123")
+    monkeypatch.setenv("RAZORPAY_KEY_SECRET", "valid_secret_456")
+
+    class FailingOrder:
+        def create(self, data):
+            raise Exception("Razorpay Gateway Connection Error 500")
+
+    class MockRazorpayClient:
+        def __init__(self, auth):
+            self.order = FailingOrder()
+
+    import sys
+    import types
+    mock_rzp_module = types.ModuleType("razorpay")
+    mock_rzp_module.Client = MockRazorpayClient
+    monkeypatch.setitem(sys.modules, "razorpay", mock_rzp_module)
+
+    data = helper_setup_allow_transaction(client)
+    res = client.post("/payment/execute", json={"transaction_id": data["transaction_id"]})
+    assert res.status_code == 502
+    assert "Razorpay payment gateway order creation failed" in res.json()["detail"]
+
+
+# TEST 7: Payment Idempotency Behavior Unchanged
+def test_p7_7_idempotency_behavior(client, monkeypatch):
+    data = helper_setup_allow_transaction(client)
+    p1 = client.post("/payment/execute", json={"transaction_id": data["transaction_id"]}).json()
+    p2 = client.post("/payment/execute", json={"transaction_id": data["transaction_id"]}).json()
+    assert p1["id"] == p2["id"]
+    assert p1["razorpay_order_id"] == p2["razorpay_order_id"]
+
