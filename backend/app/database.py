@@ -1,7 +1,8 @@
+import os
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./intentlock.db"
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./intentlock.db")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
