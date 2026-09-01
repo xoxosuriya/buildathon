@@ -43,6 +43,8 @@ export function SiteReadinessGate({ children }: SiteReadinessGateProps) {
     }
 
     // Lock page scrolling during initial loader display
+    document.documentElement.classList.add('loader-locked');
+    document.body.classList.add('loader-locked');
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
 
@@ -134,8 +136,10 @@ export function SiteReadinessGate({ children }: SiteReadinessGateProps) {
         setTimeout(() => {
           if (!isCancelled) {
             setIsReady(true);
-            document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
+            document.documentElement.classList.remove('loader-locked');
+            document.body.classList.remove('loader-locked');
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
           }
         }, 500);
       });
@@ -147,8 +151,10 @@ export function SiteReadinessGate({ children }: SiteReadinessGateProps) {
     return () => {
       isCancelled = true;
       clearTimeout(timerId);
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
+      document.documentElement.classList.remove('loader-locked');
+      document.body.classList.remove('loader-locked');
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'auto';
     };
   }, []);
 

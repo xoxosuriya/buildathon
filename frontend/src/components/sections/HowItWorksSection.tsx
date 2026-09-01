@@ -334,6 +334,21 @@ export function HowItWorksSection() {
     };
   }, []);
 
+  // Reset How It Works step to 01 when navigating via Hero or Footer entry points
+  useEffect(() => {
+    const handleResetStep = () => {
+      stepRef.current = 0;
+      animProgress.current = 0;
+      setActiveStepIndex(0);
+    };
+    (window as any).__resetHowItWorksStep = handleResetStep;
+    window.addEventListener('reset-how-it-works', handleResetStep);
+    return () => {
+      delete (window as any).__resetHowItWorksStep;
+      window.removeEventListener('reset-how-it-works', handleResetStep);
+    };
+  }, []);
+
   // 60FPS ANIMATION LOOP
   useEffect(() => {
     const renderLoop = () => {

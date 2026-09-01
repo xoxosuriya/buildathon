@@ -56,7 +56,7 @@ export const MOCK_AUTHORIZATIONS: AuthorizationContract[] = [
   {
     id: "auth_legit_82f",
     intent_id: "intent_purchase_mouse",
-    user_id: "user_sp274",
+    user_id: "user_demo_01",
     agent_id: "agent_shopping_buddy",
     max_amount: "1200.00",
     status: "ACTIVE",
@@ -65,7 +65,7 @@ export const MOCK_AUTHORIZATIONS: AuthorizationContract[] = [
   {
     id: "auth_consumed_90d",
     intent_id: "intent_purchase_mouse",
-    user_id: "user_sp274",
+    user_id: "user_demo_01",
     agent_id: "agent_shopping_buddy",
     max_amount: "1200.00",
     status: "USED",
@@ -182,7 +182,7 @@ export const MOCK_AUDIT_EVENTS: AuditEvent[] = [
     event_type: "PROPOSAL_APPROVED",
     authorization_id: null,
     transaction_id: null,
-    payload: '{"proposal_id":"prop_legit_94a1","user_id":"user_sp274"}',
+    payload: '{"proposal_id":"prop_legit_94a1","user_id":"user_demo_01"}',
     previous_hash: "ca0987522c781631e847b2c9d1a3e5f78239014561",
     hash: "7881cdebceec0293781290348712958210398401928",
     timestamp: new Date(Date.now() - 240000).toISOString()

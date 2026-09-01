@@ -6,6 +6,7 @@ import { CapabilitiesSection } from './components/sections/CapabilitiesSection';
 import { ProductWorkflowSection } from './components/sections/ProductWorkflowSection';
 import { InteractiveDemoSection } from './components/sections/InteractiveDemoSection';
 import { CtaSection } from './components/sections/CtaSection';
+import { IntentLockFooter } from './components/sections/IntentLockFooter';
 import { SiteReadinessGate } from './components/SiteReadinessGate';
 
 export default function App() {
@@ -17,6 +18,12 @@ export default function App() {
   };
 
   const scrollToHowItWorks = () => {
+    if (typeof window !== 'undefined') {
+      if ((window as any).__resetHowItWorksStep) {
+        (window as any).__resetHowItWorksStep();
+      }
+      window.dispatchEvent(new CustomEvent('reset-how-it-works'));
+    }
     const el = document.getElementById('how-it-works');
     if (el) {
       const topPos = el.getBoundingClientRect().top + window.pageYOffset;
@@ -52,8 +59,11 @@ export default function App() {
         {/* ── FINAL HYPERDRIVE CTA ("You've seen IntentLock enforce boundary. Now test it yourself.") ── */}
         <CtaSection onDemoClick={scrollToLiveDemo} />
 
-        {/* ── LIVE DEMO / REAL APPLICATION WORKFLOW (DIRECTLY BELOW CTA ON LANDING PAGE) ── */}
+        {/* ── LIVE DEMO / REAL APPLICATION WORKFLOW ── */}
         <ProductWorkflowSection />
+
+        {/* ── FINAL MINIMALIST INTENTLOCK FOOTER (DIRECTLY AFTER LIVE DEMO, MATCHING BACKGROUND) ── */}
+        <IntentLockFooter onNavigateHowItWorks={scrollToHowItWorks} />
 
       </div>
     </SiteReadinessGate>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="background: #0f172a; margin: 0; padding: 0; min-height: 100vh; overflow: hidden;">
+<html lang="en" style="background: #0f172a; margin: 0; padding: 0; min-height: 100vh;">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -16,7 +16,12 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        overflow: hidden;
+        overflow-x: hidden;
+      }
+
+      html.loader-locked, body.loader-locked {
+        overflow: hidden !important;
+        height: 100vh !important;
       }
 
       /* 100% GPU Compositor Thread Only Animation (Zero CPU Repaint / 60 FPS Guaranteed) */

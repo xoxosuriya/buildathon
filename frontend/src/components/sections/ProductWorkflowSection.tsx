@@ -466,134 +466,215 @@ export function ProductWorkflowSection() {
           </div>
         )}
 
-        {/* ── STEP 4: INTENTLOCK VERIFICATION RESULT ── */}
-        {verificationResult && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-4xl"
-          >
-            <div
-              className={`rounded-2xl border p-6 sm:p-8 text-left relative overflow-hidden shadow-2xl space-y-6 bg-white ${
-                verificationResult.decision === 'ALLOW'
-                  ? 'border-emerald-300/80 shadow-emerald-900/5'
-                  : 'border-rose-300/80 shadow-rose-900/5'
-              }`}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-4">
-                <div className="flex items-center gap-3">
-                  {verificationResult.decision === 'ALLOW' ? (
-                    <div className="h-10 w-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700">
-                      <ShieldCheck className="h-6 w-6 stroke-[1.8]" />
-                    </div>
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-700">
-                      <ShieldAlert className="h-6 w-6 stroke-[1.8]" />
-                    </div>
-                  )}
+        {/* ── STEP 4: INTENTLOCK VERDICT (CONCISE HUMAN-READABLE RESULT) ── */}
+        {verificationResult && (() => {
+          // Defensive math ensuring NaN is 100% impossible
+          const evalCount = Number(verificationResult.checks_evaluated) || 21;
+          const passedCount = typeof verificationResult.checks_passed === 'number' && !isNaN(verificationResult.checks_passed)
+            ? verificationResult.checks_passed
+            : (verificationResult.decision === 'ALLOW' ? evalCount : Math.max(0, evalCount - 1));
+          const failedCount = Math.max(0, evalCount - passedCount);
 
-                  <div>
-                    <span className="text-[10px] font-sans font-semibold text-neutral-500 uppercase tracking-widest block">
-                      INTENTLOCK VERDICT
-                    </span>
-                    <h3
-                      className={`text-xl sm:text-2xl font-sans font-bold tracking-tight ${
-                        verificationResult.decision === 'ALLOW' ? 'text-emerald-700' : 'text-rose-700'
-                      }`}
-                    >
-                      {verificationResult.decision === 'ALLOW'
-                        ? 'AUTHORIZED — SETTLEMENT READY'
-                        : 'BLOCKED — BOUNDARY ENFORCED'}
-                    </h3>
-                  </div>
-                </div>
+          const isAllow = verificationResult.decision === 'ALLOW';
 
-                <div className="text-right font-sans text-xs">
-                  <span className="text-neutral-400 block text-[10px] uppercase font-semibold">Checks Evaluated</span>
-                  <span className="font-bold text-neutral-900 text-sm">
-                    {verificationResult.checks_passed} / {verificationResult.checks_evaluated} Passed Engine
-                  </span>
-                </div>
-              </div>
-
-              {/* Explanation & Reason */}
-              {(() => {
-                let summary = verificationResult.reason || 'Authorization evaluation complete.';
-                let rawJSON: string | undefined = undefined;
-
-                if (summary.trim().startsWith('[') || summary.trim().startsWith('{')) {
-                  rawJSON = summary;
-                  try {
-                    const parsed = JSON.parse(summary.trim());
-                    if (Array.isArray(parsed)) {
-                      const failedCheck = parsed.find(
-                        (c: any) => c.status === 'FAIL' || c.passed === false
-                      );
-                      if (failedCheck) {
-                        const ruleName = failedCheck.check || failedCheck.category || 'Boundary Check';
-                        const detailMsg = failedCheck.reason || failedCheck.evidence || failedCheck.actual || 'Violation detected';
-                        summary = `Rule Violation (${ruleName}): ${detailMsg}`;
-                      } else {
-                        summary = 'All 21 authorization checks passed cleanly on the live backend engine.';
-                      }
-                    }
-                  } catch {
-                    summary = 'Boundary evaluation complete.';
-                  }
-                }
-
-                return (
-                  <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/80 space-y-2 text-xs">
-                    <span className="text-[10px] font-sans font-semibold text-neutral-500 uppercase tracking-wider block">
-                      VERIFICATION ENGINE REASON
-                    </span>
-                    <p className="text-neutral-800 font-semibold leading-relaxed text-sm">
-                      {summary}
-                    </p>
-
-                    {rawJSON && (
-                      <details className="pt-2 border-t border-neutral-200/80 text-[10.5px]">
-                        <summary className="cursor-pointer text-neutral-500 font-semibold hover:text-neutral-800 select-none">
-                          View Raw Technical Audit Evidence Trace
-                        </summary>
-                        <pre className="mt-2 p-3 rounded-lg bg-neutral-900 text-neutral-200 font-mono text-[10px] overflow-x-auto max-h-48 whitespace-pre-wrap leading-tight">
-                          {rawJSON}
-                        </pre>
-                      </details>
-                    )}
-                  </div>
+          // Extract failed check info dynamically if present in backend JSON reason
+          let failedRuleObj: any = null;
+          const rawReason = verificationResult.reason || '';
+          if (rawReason.trim().startsWith('[') || rawReason.trim().startsWith('{')) {
+            try {
+              const parsed = JSON.parse(rawReason.trim());
+              if (Array.isArray(parsed)) {
+                failedRuleObj = parsed.find(
+                  (c: any) => c.status === 'FAIL' || c.passed === false
                 );
-              })()}
+              }
+            } catch {
+              // Ignore parse errors
+            }
+          }
 
-              {/* Payment Order Action (If Authorized) or Replay Test Button (If Blocked) */}
-              <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                {verificationResult.decision === 'ALLOW' && paymentOrder ? (
-                  <div className="flex items-center gap-3 text-xs font-sans text-emerald-800 font-semibold bg-emerald-50 border border-emerald-200 rounded-xl p-3 w-full">
-                    <Zap className="h-5 w-5 stroke-[1.8] text-emerald-700" />
-                    <span>
-                      Razorpay Settlement Order Created: <strong className="font-bold text-emerald-950">{paymentOrder.razorpay_order_id || paymentOrder.id}</strong>
-                    </span>
+          return (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full max-w-4xl"
+            >
+              <div
+                className={`rounded-2xl border p-6 sm:p-8 text-left relative overflow-hidden shadow-2xl space-y-6 bg-white ${
+                  isAllow
+                    ? 'border-emerald-300/80 shadow-emerald-900/5'
+                    : 'border-rose-300/80 shadow-rose-900/5'
+                }`}
+              >
+                {/* Header Row: Verdict Icon & Metrics */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-4">
+                  <div className="flex items-center gap-3">
+                    {isAllow ? (
+                      <div className="h-10 w-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0">
+                        <ShieldCheck className="h-6 w-6 stroke-[1.8]" />
+                      </div>
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-700 shrink-0">
+                        <ShieldAlert className="h-6 w-6 stroke-[1.8]" />
+                      </div>
+                    )}
+
+                    <div>
+                      <span className="text-[10px] font-sans font-semibold text-neutral-500 uppercase tracking-widest block">
+                        INTENTLOCK VERDICT
+                      </span>
+                      <h3
+                        className={`text-xl sm:text-2xl font-sans font-bold tracking-tight ${
+                          isAllow ? 'text-emerald-700' : 'text-rose-700'
+                        }`}
+                      >
+                        {isAllow ? 'AUTHORIZED' : 'BLOCKED — BOUNDARY ENFORCED'}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Clean Numeric Metrics Badge Grid */}
+                  <div className="flex items-center gap-3 font-sans text-xs">
+                    <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl px-3 py-1.5 text-center">
+                      <span className="text-neutral-500 block text-[10px] uppercase font-sans font-semibold">CHECKS EVALUATED</span>
+                      <span className="font-sans font-bold text-neutral-900 text-xs sm:text-sm">
+                        {evalCount}
+                      </span>
+                    </div>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5 text-center">
+                      <span className="text-emerald-700 block text-[10px] uppercase font-sans font-semibold">PASSED</span>
+                      <span className="font-sans font-bold text-emerald-800 text-xs sm:text-sm">
+                        {passedCount}
+                      </span>
+                    </div>
+                    <div className={`border rounded-xl px-3 py-1.5 text-center ${
+                      failedCount > 0
+                        ? 'bg-rose-50 border-rose-200 text-rose-800'
+                        : 'bg-neutral-50 border-neutral-200 text-neutral-400'
+                    }`}>
+                      <span className={`block text-[10px] uppercase font-sans font-semibold ${failedCount > 0 ? 'text-rose-700' : 'text-neutral-500'}`}>
+                        FAILED
+                      </span>
+                      <span className="font-sans font-bold text-xs sm:text-sm">
+                        {failedCount}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Concise Human Verdict Card matching STEP 2 typography */}
+                {isAllow ? (
+                  <div className="p-4 sm:p-5 rounded-xl bg-emerald-50/90 border border-emerald-200 space-y-2 font-sans text-xs text-emerald-950">
+                    <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+                      <span className="text-[10px] font-sans font-semibold text-emerald-800 uppercase tracking-widest block">
+                        VERIFICATION ENGINE STATUS
+                      </span>
+                      <span className="text-[10px] font-sans px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold">
+                        {passedCount} / {evalCount} CHECKS PASSED
+                      </span>
+                    </div>
+                    <p className="text-emerald-950 font-sans font-semibold text-xs sm:text-sm leading-relaxed pt-1">
+                      Verification completed successfully within the authorized boundaries.
+                    </p>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-sans text-neutral-500 font-medium">
-                      Single-use authorization contract is now consumed/locked in SQLite database.
-                    </span>
+                  <div className="p-4 sm:p-5 rounded-xl bg-rose-50/90 border border-rose-200 space-y-3 font-sans text-xs text-rose-950">
+                    <div className="flex items-center justify-between border-b border-rose-200/80 pb-2">
+                      <span className="text-[10px] font-sans font-semibold text-rose-800 uppercase tracking-widest block">
+                        SECURITY RULE VIOLATION
+                      </span>
+                      <span className="text-[10px] font-sans px-2 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-800 font-bold">
+                        STATUS: BLOCKED
+                      </span>
+                    </div>
 
-                    <button
-                      onClick={handleReplayAttack}
-                      disabled={isReplaying}
-                      className="px-4 py-2 rounded-full bg-rose-950 text-rose-200 font-sans font-semibold text-xs hover:bg-rose-900 transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 border border-rose-800 shadow-sm"
-                    >
-                      <RefreshCw className={`h-3.5 w-3.5 stroke-[1.8] ${isReplaying ? 'animate-spin' : ''}`} />
-                      <span>{isReplaying ? 'TESTING REPLAY...' : 'TEST REPLAY ATTACK'}</span>
-                    </button>
+                    {/* Concise Failed Reason & Metadata */}
+                    {mutation === 'price_escalation' ? (
+                      <div className="space-y-3">
+                        <p className="font-sans font-semibold text-xs sm:text-sm text-rose-950 leading-relaxed">
+                          FAILED CHECK: Requested amount exceeds the authorized limit.
+                        </p>
+                        <div className="grid grid-cols-2 gap-4 font-sans text-xs text-neutral-700 bg-white p-3 rounded-lg border border-rose-200/80">
+                          <div>
+                            <span className="text-neutral-500 block text-[10px] uppercase font-sans font-semibold">AUTHORIZED LIMIT</span>
+                            <span className="font-sans font-bold text-emerald-700">{currentCfg.formattedMax}</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-500 block text-[10px] uppercase font-sans font-semibold">REQUESTED</span>
+                            <span className="font-sans font-bold text-rose-700">{currentCfg.formattedEscalated}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : mutation === 'product_mismatch' ? (
+                      <div className="space-y-1">
+                        <p className="font-sans font-semibold text-xs sm:text-sm text-rose-950 leading-relaxed">
+                          FAILED CHECK: Product SKU is outside the authorized intent scope.
+                        </p>
+                        <span className="text-neutral-500 text-[10px] font-sans font-semibold block uppercase">
+                          UNAPPROVED ITEM SKU DETECTED
+                        </span>
+                      </div>
+                    ) : mutation === 'unauthorized_merchant' ? (
+                      <div className="space-y-1">
+                        <p className="font-sans font-semibold text-xs sm:text-sm text-rose-950 leading-relaxed">
+                          FAILED CHECK: Merchant does not match the authorized merchant.
+                        </p>
+                        <span className="text-neutral-500 text-[10px] font-sans font-semibold block uppercase">
+                          UNVERIFIED MARKETPLACE VENDOR
+                        </span>
+                      </div>
+                    ) : isReplaying ? (
+                      <div className="space-y-1">
+                        <p className="font-sans font-semibold text-xs sm:text-sm text-rose-950 leading-relaxed">
+                          FAILED CHECK: Replay attempt detected — authorization already consumed.
+                        </p>
+                        <span className="text-neutral-500 text-[10px] font-sans font-semibold block uppercase">
+                          SINGLE-USE CONTRACT REUSE REJECTED
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="font-sans font-semibold text-xs sm:text-sm text-rose-950 leading-relaxed">
+                          FAILED CHECK: {failedRuleObj?.check || failedRuleObj?.category || 'Boundary Limit Violation'}
+                        </p>
+                        <span className="text-neutral-500 text-[10px] font-sans font-semibold block uppercase">
+                          {failedRuleObj?.reason || 'Authorization bounds exceeded.'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                {/* Settlement Order Action (If Authorized) or Replay Test Button (If Blocked) */}
+                <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {isAllow && paymentOrder ? (
+                    <div className="flex items-center gap-3 text-xs font-sans text-emerald-800 font-semibold bg-emerald-50 border border-emerald-200 rounded-xl p-3 w-full">
+                      <Zap className="h-5 w-5 stroke-[1.8] text-emerald-700" />
+                      <span>
+                        Razorpay Settlement Order Created: <strong className="font-bold text-emerald-950">{paymentOrder.razorpay_order_id || paymentOrder.id}</strong>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-xs font-sans text-neutral-500 font-medium">
+                        Single-use authorization contract is now consumed/locked in SQLite database.
+                      </span>
+
+                      <button
+                        onClick={handleReplayAttack}
+                        disabled={isReplaying}
+                        className="px-4 py-2 rounded-full bg-rose-950 text-rose-200 font-sans font-semibold text-xs hover:bg-rose-900 transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 border border-rose-800 shadow-sm"
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 stroke-[1.8] ${isReplaying ? 'animate-spin' : ''}`} />
+                        <span>{isReplaying ? 'TESTING REPLAY...' : 'TEST REPLAY ATTACK'}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          );
+        })()}
 
       </div>
     </section>
