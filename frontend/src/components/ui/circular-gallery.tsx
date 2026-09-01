@@ -25,6 +25,7 @@ interface CircularGalleryProps extends HTMLAttributes<HTMLDivElement> {
   autoRotateSpeed?: number;
   onActiveIndexChange?: (index: number) => void;
   isBackendUnavailable?: boolean;
+  selectedIndex?: number | null;
 }
 
 const CircularGalleryComponent = React.forwardRef<HTMLDivElement, CircularGalleryProps>(
@@ -36,15 +37,17 @@ const CircularGalleryComponent = React.forwardRef<HTMLDivElement, CircularGaller
       autoRotateSpeed = 0.055,
       onActiveIndexChange,
       isBackendUnavailable = false,
+      selectedIndex = null,
       ...props
     },
     ref
   ) => {
     const stageRef = useRef<HTMLDivElement | null>(null);
     const rotationRef = useRef<number>(0);
-    const isHoveredRef = useRef<boolean>(false);
     const animationFrameRef = useRef<number | null>(null);
     const lastActiveIndexRef = useRef<number>(-1);
+    const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isManualPausedRef = useRef<boolean>(false);
 
     // Refs for strictly zero-re-render animation performance
     const itemsRef = useRef<SecurityScenarioItem[]>(items);
@@ -63,6 +66,31 @@ const CircularGalleryComponent = React.forwardRef<HTMLDivElement, CircularGaller
     const anglePerItemRef = useRef<number>(anglePerItem);
     anglePerItemRef.current = anglePerItem;
 
+    // Handle manual scenario selection via capsule clicks
+    useEffect(() => {
+      if (selectedIndex === undefined || selectedIndex === null) return;
+      const targetIndex = selectedIndex;
+      const currentAnglePerItem = anglePerItemRef.current;
+
+      const targetRotation = (360 - targetIndex * currentAnglePerItem) % 360;
+      rotationRef.current = targetRotation;
+
+      if (stageRef.current) {
+        stageRef.current.style.transform = `rotateY(${targetRotation}deg)`;
+      }
+
+      lastActiveIndexRef.current = targetIndex;
+      onActiveIndexChangeRef.current?.(targetIndex);
+
+      if (pauseTimerRef.current) {
+        clearTimeout(pauseTimerRef.current);
+      }
+      isManualPausedRef.current = true;
+      pauseTimerRef.current = setTimeout(() => {
+        isManualPausedRef.current = false;
+      }, 4000);
+    }, [selectedIndex]);
+
     // Single permanent rAF loop initialized EXACTLY ONCE on mount (0% frame pauses / 0% stutter)
     useEffect(() => {
       let lastTime = performance.now();
@@ -71,7 +99,7 @@ const CircularGalleryComponent = React.forwardRef<HTMLDivElement, CircularGaller
         const delta = now - lastTime;
         lastTime = now;
 
-        if (!isHoveredRef.current && !isBackendUnavailableRef.current) {
+        if (!isBackendUnavailableRef.current && !isManualPausedRef.current) {
           // Time-delta based rotation calculation with delta clamping (max 64ms) to prevent stutter jumps
           const clampedDelta = Math.min(64, delta);
           rotationRef.current = (rotationRef.current + autoRotateSpeedRef.current * (clampedDelta / 16.66)) % 360;
@@ -112,6 +140,9 @@ const CircularGalleryComponent = React.forwardRef<HTMLDivElement, CircularGaller
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
         }
+        if (pauseTimerRef.current) {
+          clearTimeout(pauseTimerRef.current);
+        }
       };
     }, []); // RUN ONCE ON MOUNT
 
@@ -120,8 +151,6 @@ const CircularGalleryComponent = React.forwardRef<HTMLDivElement, CircularGaller
         ref={ref}
         role="region"
         aria-label="IntentLock 3D Circular Security Ring"
-        onMouseEnter={() => { isHoveredRef.current = true; }}
-        onMouseLeave={() => { isHoveredRef.current = false; }}
         className={cn(
           "relative w-full h-[540px] sm:h-[580px] flex items-center justify-center select-none py-4 overflow-visible font-sans",
           className

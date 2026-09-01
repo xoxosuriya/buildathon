@@ -95,11 +95,17 @@ const ActiveScenarioCaption = memo(function ActiveScenarioCaption({
 
 export function InteractiveDemoSection() {
   const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [scenarioData, setScenarioData] = useState<SecurityScenarioItem[]>(SCENARIO_DEFS);
   const [isBackendUnavailable, setIsBackendUnavailable] = useState<boolean>(false);
 
   const handleActiveIndexChange = useCallback((index: number) => {
     setActiveIndex((prev) => (prev !== index ? index : prev));
+  }, []);
+
+  const handleScenarioClick = useCallback((index: number) => {
+    setActiveIndex(index);
+    setSelectedIndex(index);
   }, []);
 
   // Fetch real FastAPI backend evaluation results for all 5 security scenarios
@@ -184,16 +190,26 @@ export function InteractiveDemoSection() {
             className="flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 mb-6 max-w-4xl"
           >
             {SCENARIO_DEFS.map((scen, idx) => (
-              <div
+              <button
                 key={scen.id}
-                className={`px-3.5 py-1.5 rounded-full text-[11px] font-sans font-semibold tracking-wider transition-all duration-300 flex items-center gap-1.5 uppercase ${
+                type="button"
+                onClick={() => handleScenarioClick(idx)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleScenarioClick(idx);
+                  }
+                }}
+                aria-label={`Select ${scen.title} scenario`}
+                aria-pressed={activeIndex === idx}
+                className={`px-3.5 py-1.5 rounded-full text-[11px] font-sans font-semibold tracking-wider transition-all duration-300 flex items-center gap-1.5 uppercase cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 ${
                   activeIndex === idx
                     ? 'bg-neutral-900 text-white shadow-md border border-neutral-900 scale-105'
                     : 'bg-white text-neutral-600 border border-neutral-300 hover:border-neutral-400 hover:text-neutral-900 shadow-sm'
                 }`}
               >
                 <span>{scen.title}</span>
-              </div>
+              </button>
             ))}
           </motion.div>
         )}
@@ -212,6 +228,7 @@ export function InteractiveDemoSection() {
             autoRotateSpeed={0.055}
             onActiveIndexChange={handleActiveIndexChange}
             isBackendUnavailable={isBackendUnavailable}
+            selectedIndex={selectedIndex}
           />
         </motion.div>
 

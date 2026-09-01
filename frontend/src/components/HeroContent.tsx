@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { useSiteReadiness } from './SiteReadinessGate';
 
 // ── Typewriter Hook ──────────────────────────────────────────────────────────
-function useTypewriter(text: string, speed = 38, startDelay = 600) {
+function useTypewriter(text: string, speed = 38, startDelay = 150, startTrigger = true) {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    if (!startTrigger) {
+      setDisplayed('');
+      setDone(false);
+      return;
+    }
+
     setDisplayed('');
     setDone(false);
     let idx = 0;
@@ -23,7 +30,7 @@ function useTypewriter(text: string, speed = 38, startDelay = 600) {
       return () => clearInterval(intervalId);
     }, startDelay);
     return () => clearTimeout(delayId);
-  }, [text, speed, startDelay]);
+  }, [text, speed, startDelay, startTrigger]);
 
   return { displayed, done };
 }
@@ -32,7 +39,7 @@ function useTypewriter(text: string, speed = 38, startDelay = 600) {
 const containerVariants = {
   hidden: {},
   visible: {
-    transition: { staggerChildren: 0.14, delayChildren: 0.15 },
+    transition: { staggerChildren: 0.18, delayChildren: 0.25 },
   },
 };
 
@@ -41,7 +48,7 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   },
 };
 
@@ -50,8 +57,9 @@ interface HeroProps {
 }
 
 export function HeroContent({ onLearnClick }: HeroProps) {
+  const { isReady } = useSiteReadiness();
   const HEADLINE = 'AI should act\non your intent.\nNot beyond it.';
-  const { displayed, done } = useTypewriter(HEADLINE, 36, 900);
+  const { displayed, done } = useTypewriter(HEADLINE, 58, 300, isReady);
 
   return (
     <div className="relative z-10 flex flex-col order-first lg:order-none w-full bg-white lg:bg-transparent pb-10 lg:pb-0 lg:min-h-screen">
@@ -62,7 +70,7 @@ export function HeroContent({ onLearnClick }: HeroProps) {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          animate="visible"
+          animate={isReady ? 'visible' : 'hidden'}
           className="max-w-xl lg:max-w-2xl"
         >
           {/* Eyebrow */}

@@ -1,10 +1,20 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { AiLoader } from './ui/ai-loader';
 import { apiService } from '../services/api';
 
 interface SiteReadinessGateProps {
   children: React.ReactNode;
 }
+
+interface SiteReadinessContextType {
+  isReady: boolean;
+}
+
+export const SiteReadinessContext = createContext<SiteReadinessContextType>({
+  isReady: false,
+});
+
+export const useSiteReadiness = () => useContext(SiteReadinessContext);
 
 // ── Complete Comprehensive Asset Catalog for the Entire Site ──
 const CRITICAL_VIDEO_URLS = [
@@ -159,7 +169,7 @@ export function SiteReadinessGate({ children }: SiteReadinessGateProps) {
   }, []);
 
   return (
-    <>
+    <SiteReadinessContext.Provider value={{ isReady }}>
       {/* ── 21st.dev AI LOADER GLOBAL TOPMOST OVERLAY ── */}
       {!isReady && (
         <div
@@ -179,6 +189,6 @@ export function SiteReadinessGate({ children }: SiteReadinessGateProps) {
       >
         {children}
       </div>
-    </>
+    </SiteReadinessContext.Provider>
   );
 }
